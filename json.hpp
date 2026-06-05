@@ -115,15 +115,24 @@ struct Parser {
         consume();
     }
 
+    void match_literal(const char* expected) {
+        while (*expected) {
+            if (p >= end) error("unexpected end of input");
+            if (peek() != *expected) error(std::string("invalid token, expected '") + *expected + "'");
+            consume();
+            ++expected;
+        }
+    }
+
     Value parse_value() {
         skip_ws();
         char c = peek();
         if (c == '{') return parse_object();
         if (c == '[') return parse_array();
         if (c == '"') return parse_string();
-        if (c == 't') { consume(); consume(); consume(); consume(); return Value(true); }
-        if (c == 'f') { consume(); consume(); consume(); consume(); consume(); return Value(false); }
-        if (c == 'n') { consume(); consume(); consume(); consume(); return Value(); }
+        if (c == 't') { match_literal("true");  return Value(true);  }
+        if (c == 'f') { match_literal("false"); return Value(false); }
+        if (c == 'n') { match_literal("null");  return Value();      }
         if (c == '-' || (c >= '0' && c <= '9')) return parse_number();
         error(std::string("unexpected character '") + c + "'");
     }
@@ -236,7 +245,11 @@ std::string dump(const Value& v, int indent, int depth) {
     if (v.is_string()) return dump_string(v.as_string());
     if (v.is_number()) {
         double n = v.as_number();
-        if (n == (long long)n) return std::to_string((long long)n);
+        // 2^53 is the max integer exactly representable as double;
+        // casting beyond that range to long long is UB.
+        constexpr double safe_int_limit = 9007199254740992.0;
+        if (std::isfinite(n) && n >= -safe_int_limit && n <= safe_int_limit && n == (long long)n)
+            return std::to_string((long long)n);
         std::ostringstream ss;
         ss << n;
         return ss.str();
