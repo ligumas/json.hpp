@@ -66,6 +66,6 @@ try {
 }
 ```
 
-handles objects, arrays, strings, numbers (int/float), bools, null, and escape sequences. unicode `\uXXXX` is skipped (not decoded).
+handles objects, arrays, strings, numbers (int/float), bools, null, and escape sequences including `\uXXXX` (decoded to UTF-8, surrogate pairs supported).
 
 **License:** MIT

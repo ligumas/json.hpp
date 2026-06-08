@@ -8,6 +8,7 @@
 #include <charconv>
 #include <cmath>
 #include <sstream>
+#include <cstdint>
 
 namespace json {
 
@@ -124,6 +125,38 @@ struct Parser {
         }
     }
 
+    uint32_t parse_hex4() {
+        uint32_t v = 0;
+        for (int i = 0; i < 4; i++) {
+            if (p >= end) error("unexpected end in unicode escape");
+            char c = consume();
+            v <<= 4;
+            if      (c >= '0' && c <= '9') v |= (uint32_t)(c - '0');
+            else if (c >= 'a' && c <= 'f') v |= (uint32_t)(c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F') v |= (uint32_t)(c - 'A' + 10);
+            else error(std::string("invalid hex digit '") + c + "' in unicode escape");
+        }
+        return v;
+    }
+
+    static void append_utf8(std::string& s, uint32_t cp) {
+        if (cp <= 0x7F) {
+            s += (char)cp;
+        } else if (cp <= 0x7FF) {
+            s += (char)(0xC0 | (cp >> 6));
+            s += (char)(0x80 | (cp & 0x3F));
+        } else if (cp <= 0xFFFF) {
+            s += (char)(0xE0 | (cp >> 12));
+            s += (char)(0x80 | ((cp >> 6) & 0x3F));
+            s += (char)(0x80 | (cp & 0x3F));
+        } else {
+            s += (char)(0xF0 | (cp >> 18));
+            s += (char)(0x80 | ((cp >> 12) & 0x3F));
+            s += (char)(0x80 | ((cp >> 6) & 0x3F));
+            s += (char)(0x80 | (cp & 0x3F));
+        }
+    }
+
     Value parse_value() {
         skip_ws();
         char c = peek();
@@ -188,8 +221,29 @@ struct Parser {
                     case 't': s += '\t'; break;
                     case 'b': s += '\b'; break;
                     case 'f': s += '\f'; break;
-                    // unicode escape - simplified, just skip
-                    case 'u': consume(); consume(); consume(); consume(); break;
+                    case 'u': {
+                        uint32_t cp = parse_hex4();
+                        if (cp >= 0xD800 && cp <= 0xDBFF) {
+                            // high surrogate — look for following \uXXXX low surrogate
+                            if ((end - p) >= 2 && p[0] == '\\' && p[1] == 'u') {
+                                consume(); // '\\'
+                                consume(); // 'u'
+                                uint32_t lo = parse_hex4();
+                                if (lo >= 0xDC00 && lo <= 0xDFFF) {
+                                    cp = 0x10000u + ((cp - 0xD800u) << 10) + (lo - 0xDC00u);
+                                } else {
+                                    append_utf8(s, 0xFFFD);
+                                    cp = (lo >= 0xD800 && lo <= 0xDFFF) ? 0xFFFD : lo;
+                                }
+                            } else {
+                                cp = 0xFFFD;
+                            }
+                        } else if (cp >= 0xDC00 && cp <= 0xDFFF) {
+                            cp = 0xFFFD;
+                        }
+                        append_utf8(s, cp);
+                        break;
+                    }
                     default: s += e;
                 }
             } else {
