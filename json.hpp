@@ -277,14 +277,23 @@ std::string dump(const Value& v, int indent, int depth);
 
 std::string dump_string(const std::string& s) {
     std::string r = "\"";
-    for (char c : s) {
+    for (unsigned char c : s) {
         switch (c) {
             case '"':  r += "\\\""; break;
             case '\\': r += "\\\\"; break;
             case '\n': r += "\\n";  break;
             case '\r': r += "\\r";  break;
             case '\t': r += "\\t";  break;
-            default:   r += c;
+            case '\b': r += "\\b";  break;
+            case '\f': r += "\\f";  break;
+            default:
+                if (c < 0x20) {
+                    char buf[7];
+                    std::snprintf(buf, sizeof(buf), "\\u%04x", (unsigned)c);
+                    r += buf;
+                } else {
+                    r += (char)c;
+                }
         }
     }
     return r + "\"";
