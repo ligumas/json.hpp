@@ -9,6 +9,7 @@
 #include <cmath>
 #include <sstream>
 #include <cstdint>
+#include <limits>
 
 namespace json {
 
@@ -313,7 +314,12 @@ inline std::string dump(const Value& v, int indent, int depth) {
         constexpr double safe_int_limit = 9007199254740992.0;
         if (std::isfinite(n) && n >= -safe_int_limit && n <= safe_int_limit && n == (long long)n)
             return std::to_string((long long)n);
+        // use to_chars for shortest round-trip representation; fallback for older stdlibs
+        char buf[32];
+        auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), n);
+        if (ec == std::errc{}) return std::string(buf, ptr);
         std::ostringstream ss;
+        ss.precision(std::numeric_limits<double>::max_digits10);
         ss << n;
         return ss.str();
     }
