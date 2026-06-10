@@ -350,6 +350,7 @@ inline Value parse(const std::string& s) {
     detail::Parser p(s.data(), s.size());
     Value v = p.parse_value();
     p.skip_ws();
+    if (p.p < p.end) p.error(std::string("unexpected trailing character '") + *p.p + "'");
     return v;
 }
 
