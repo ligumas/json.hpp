@@ -273,9 +273,9 @@ struct Parser {
     }
 };
 
-std::string dump(const Value& v, int indent, int depth);
+inline std::string dump(const Value& v, int indent, int depth);
 
-std::string dump_string(const std::string& s) {
+inline std::string dump_string(const std::string& s) {
     std::string r = "\"";
     for (unsigned char c : s) {
         switch (c) {
@@ -299,7 +299,7 @@ std::string dump_string(const std::string& s) {
     return r + "\"";
 }
 
-std::string dump(const Value& v, int indent, int depth) {
+inline std::string dump(const Value& v, int indent, int depth) {
     std::string pad(indent * depth, ' ');
     std::string pad1(indent * (depth + 1), ' ');
 
