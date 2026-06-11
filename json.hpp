@@ -74,6 +74,14 @@ struct Value {
         if (is_object()) return std::get<Object>(data).size();
         return 0;
     }
+
+    // returns pointer to value at key, or nullptr if missing or not an object
+    const Value* try_get(const std::string& key) const {
+        if (!is_object()) return nullptr;
+        const auto& obj = std::get<Object>(data);
+        auto it = obj.find(key);
+        return it != obj.end() ? &it->second : nullptr;
+    }
 };
 
 class ParseError : public std::runtime_error {
@@ -225,10 +233,9 @@ struct Parser {
                     case 'u': {
                         uint32_t cp = parse_hex4();
                         if (cp >= 0xD800 && cp <= 0xDBFF) {
-                            // high surrogate — look for following \uXXXX low surrogate
                             if ((end - p) >= 2 && p[0] == '\\' && p[1] == 'u') {
-                                consume(); // '\\'
-                                consume(); // 'u'
+                                consume();
+                                consume();
                                 uint32_t lo = parse_hex4();
                                 if (lo >= 0xDC00 && lo <= 0xDFFF) {
                                     cp = 0x10000u + ((cp - 0xD800u) << 10) + (lo - 0xDC00u);
@@ -267,7 +274,6 @@ struct Parser {
         double val;
         auto [ptr, ec] = std::from_chars(start, p, val);
         if (ec != std::errc{}) {
-            // from_chars doesn't handle floats on all stdlibs, fallback
             val = std::stod(std::string(start, p));
         }
         return Value(val);
