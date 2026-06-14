@@ -307,9 +307,6 @@ inline std::string dump_string(const std::string& s) {
 }
 
 inline std::string dump(const Value& v, int indent, int depth) {
-    std::string pad(indent * depth, ' ');
-    std::string pad1(indent * (depth + 1), ' ');
-
     if (v.is_null())   return "null";
     if (v.is_bool())   return v.as_bool() ? "true" : "false";
     if (v.is_string()) return dump_string(v.as_string());
@@ -332,6 +329,16 @@ inline std::string dump(const Value& v, int indent, int depth) {
     if (v.is_array()) {
         const auto& arr = v.as_array();
         if (arr.empty()) return "[]";
+        if (indent == 0) {
+            std::string s = "[";
+            for (size_t i = 0; i < arr.size(); i++) {
+                s += dump(arr[i], 0, 0);
+                if (i + 1 < arr.size()) s += ",";
+            }
+            return s + "]";
+        }
+        std::string pad(indent * depth, ' ');
+        std::string pad1(indent * (depth + 1), ' ');
         std::string s = "[\n";
         for (size_t i = 0; i < arr.size(); i++) {
             s += pad1 + dump(arr[i], indent, depth + 1);
@@ -343,10 +350,22 @@ inline std::string dump(const Value& v, int indent, int depth) {
     if (v.is_object()) {
         const auto& obj = v.as_object();
         if (obj.empty()) return "{}";
+        if (indent == 0) {
+            std::string s = "{";
+            size_t i = 0;
+            for (const auto& [k, val] : obj) {
+                s += dump_string(k) + ":" + dump(val, 0, 0);
+                if (i + 1 < obj.size()) s += ",";
+                i++;
+            }
+            return s + "}";
+        }
+        std::string pad(indent * depth, ' ');
+        std::string pad1(indent * (depth + 1), ' ');
         std::string s = "{\n";
         size_t i = 0;
         for (const auto& [k, val] : obj) {
-            s += pad1 + dump_string(k) + (indent > 0 ? ": " : ":") + dump(val, indent, depth + 1);
+            s += pad1 + dump_string(k) + ": " + dump(val, indent, depth + 1);
             if (i + 1 < obj.size()) s += ",";
             s += "\n";
             i++;
