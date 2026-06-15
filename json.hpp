@@ -75,13 +75,54 @@ struct Value {
         return 0;
     }
 
-    // returns pointer to value at key, or nullptr if missing or not an object
     const Value* try_get(const std::string& key) const {
         if (!is_object()) return nullptr;
         const auto& obj = std::get<Object>(data);
         auto it = obj.find(key);
         return it != obj.end() ? &it->second : nullptr;
     }
+
+    bool operator==(const Value& other) const {
+        if (data.index() != other.data.index()) return false;
+        if (is_null())   return true;
+        if (is_bool())   return as_bool()   == other.as_bool();
+        if (is_number()) return as_number() == other.as_number();
+        if (is_string()) return as_string() == other.as_string();
+        if (is_array()) {
+            const auto& a = as_array();
+            const auto& b = other.as_array();
+            if (a.size() != b.size()) return false;
+            for (size_t i = 0; i < a.size(); i++)
+                if (!(a[i] == b[i])) return false;
+            return true;
+        }
+        if (is_object()) {
+            const auto& a = as_object();
+            const auto& b = other.as_object();
+            if (a.size() != b.size()) return false;
+            for (const auto& [k, v] : a) {
+                auto it = b.find(k);
+                if (it == b.end() || !(v == it->second)) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+    bool operator!=(const Value& other) const { return !(*this == other); }
+
+    bool operator==(const std::string& s)  const { return is_string() && as_string() == s; }
+    bool operator==(const char* s)         const { return is_string() && as_string() == s; }
+    bool operator==(double n)              const { return is_number() && as_number() == n; }
+    bool operator==(int n)                 const { return is_number() && as_number() == (double)n; }
+    bool operator==(bool b)                const { return is_bool()   && as_bool()   == b; }
+    bool operator==(std::nullptr_t)        const { return is_null(); }
+
+    bool operator!=(const std::string& s)  const { return !(*this == s); }
+    bool operator!=(const char* s)         const { return !(*this == s); }
+    bool operator!=(double n)              const { return !(*this == n); }
+    bool operator!=(int n)                 const { return !(*this == n); }
+    bool operator!=(bool b)                const { return !(*this == b); }
+    bool operator!=(std::nullptr_t)        const { return !(*this == nullptr); }
 };
 
 class ParseError : public std::runtime_error {
@@ -312,12 +353,9 @@ inline std::string dump(const Value& v, int indent, int depth) {
     if (v.is_string()) return dump_string(v.as_string());
     if (v.is_number()) {
         double n = v.as_number();
-        // 2^53 is the max integer exactly representable as double;
-        // casting beyond that range to long long is UB.
         constexpr double safe_int_limit = 9007199254740992.0;
         if (std::isfinite(n) && n >= -safe_int_limit && n <= safe_int_limit && n == (long long)n)
             return std::to_string((long long)n);
-        // use to_chars for shortest round-trip representation; fallback for older stdlibs
         char buf[32];
         auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), n);
         if (ec == std::errc{}) return std::string(buf, ptr);
