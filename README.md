@@ -38,10 +38,15 @@ json::Value v = json::parse(str);   // throws json::ParseError on bad input
 v.is_null() / is_bool() / is_number() / is_string() / is_array() / is_object()
 
 v.as_bool() / as_number() / as_int() / as_string()
-v["key"]        // object access
+v["key"]        // object access — throws if key missing
 v[0]            // array access
 v.size()
 v.contains("key")
+
+// safe access: returns pointer to value, or nullptr if key is missing
+if (const json::Value* p = v.try_get("optional_field")) {
+    use(p->as_string());
+}
 
 std::string s = json::dump(v);       // pretty-printed, 2 space indent
 std::string s = json::dump(v, 0);    // compact
