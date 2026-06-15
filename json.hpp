@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <unordered_map>
 #include <variant>
@@ -415,7 +416,7 @@ inline std::string dump(const Value& v, int indent, int depth) {
 
 } // namespace detail
 
-inline Value parse(const std::string& s) {
+inline Value parse(std::string_view s) {
     detail::Parser p(s.data(), s.size());
     Value v = p.parse_value();
     p.skip_ws();
@@ -423,8 +424,12 @@ inline Value parse(const std::string& s) {
     return v;
 }
 
+inline Value parse(const std::string& s) {
+    return parse(std::string_view(s));
+}
+
 inline Value parse(const char* s) {
-    return parse(std::string(s));
+    return parse(std::string_view(s));
 }
 
 inline std::string dump(const Value& v, int indent = 2) {
@@ -432,3 +437,4 @@ inline std::string dump(const Value& v, int indent = 2) {
 }
 
 } // namespace json
+
