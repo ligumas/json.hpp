@@ -53,13 +53,18 @@ std::string s = json::dump(v);       // pretty-printed, 2 space indent
 std::string s = json::dump(v, 0);    // compact
 ```
 
-building values manually:
+building values:
 
 ```cpp
-json::Value obj = json::Object{};
-obj.as_object()["x"] = json::Value(42);
+auto obj = json::object({
+    {"name", "jasper"},
+    {"age", 20},
+    {"tags", json::array({"cpp", "linux"})}
+});
 
-json::Value arr = json::Array{ json::Value(1), json::Value(2) };
+auto arr = json::array({1, 2, 3});
+
+std::string s = json::dump(obj);  // serialize back to JSON string
 ```
 
 errors include line and column:
