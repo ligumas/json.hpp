@@ -31,6 +31,8 @@ struct Value {
     Value(bool b) : data(b) {}
     Value(double n) : data(n) {}
     Value(int n) : data((double)n) {}
+    Value(long long n) : data((double)n) {}
+    Value(std::nullptr_t) : data(Null{}) {}
     Value(const char* s) : data(String(s)) {}
     Value(String s) : data(std::move(s)) {}
     Value(Array a) : data(std::move(a)) {}
@@ -446,6 +448,14 @@ inline std::string dump(const Value& v, int indent = 2) {
 
 inline std::ostream& operator<<(std::ostream& os, const Value& v) {
     return os << dump(v);
+}
+
+inline Value object(std::initializer_list<std::pair<const std::string, Value>> init) {
+    return Value(Object(init.begin(), init.end()));
+}
+
+inline Value array(std::initializer_list<Value> init) {
+    return Value(Array(init.begin(), init.end()));
 }
 
 } // namespace json
