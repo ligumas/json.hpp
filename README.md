@@ -41,6 +41,7 @@ v.as_bool() / as_number() / as_int() / as_string()
 v["key"]        // object access — throws if key missing
 v[0]            // array access
 v.size()
+v.empty()
 v.contains("key")
 
 // safe access: returns pointer to value, or nullptr if key is missing
