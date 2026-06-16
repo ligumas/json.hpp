@@ -9,6 +9,7 @@
 #include <charconv>
 #include <cmath>
 #include <sstream>
+#include <ostream>
 #include <cstdint>
 #include <limits>
 
@@ -434,6 +435,10 @@ inline Value parse(const char* s) {
 
 inline std::string dump(const Value& v, int indent = 2) {
     return detail::dump(v, indent, 0);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Value& v) {
+    return os << dump(v);
 }
 
 } // namespace json
