@@ -77,6 +77,13 @@ struct Value {
         return 0;
     }
 
+    bool empty() const {
+        if (is_array())  return std::get<Array>(data).empty();
+        if (is_object()) return std::get<Object>(data).empty();
+        if (is_string()) return std::get<String>(data).empty();
+        return true;
+    }
+
     const Value* try_get(const std::string& key) const {
         if (!is_object()) return nullptr;
         const auto& obj = std::get<Object>(data);
