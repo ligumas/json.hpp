@@ -93,6 +93,11 @@ struct Value {
         return it != obj.end() ? &it->second : nullptr;
     }
 
+    Value value(const std::string& key, Value default_val) const {
+        const Value* p = try_get(key);
+        return p ? *p : std::move(default_val);
+    }
+
     bool operator==(const Value& other) const {
         if (data.index() != other.data.index()) return false;
         if (is_null())   return true;
@@ -459,4 +464,5 @@ inline Value array(std::initializer_list<Value> init) {
 }
 
 } // namespace json
+
 
