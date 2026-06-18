@@ -321,6 +321,8 @@ struct Parser {
     Value parse_number() {
         const char* start = p;
         if (peek() == '-') consume();
+        if (p >= end || !(peek() >= '0' && peek() <= '9'))
+            error("invalid number: expected digit");
         while (p < end && peek() >= '0' && peek() <= '9') consume();
         if (peek() == '.') { consume(); while (p < end && peek() >= '0' && peek() <= '9') consume(); }
         if (peek() == 'e' || peek() == 'E') {
@@ -331,7 +333,11 @@ struct Parser {
         double val;
         auto [ptr, ec] = std::from_chars(start, p, val);
         if (ec != std::errc{}) {
-            val = std::stod(std::string(start, p));
+            try {
+                val = std::stod(std::string(start, p));
+            } catch (...) {
+                error("invalid number");
+            }
         }
         return Value(val);
     }
@@ -464,5 +470,3 @@ inline Value array(std::initializer_list<Value> init) {
 }
 
 } // namespace json
-
-
