@@ -323,11 +323,24 @@ struct Parser {
         if (peek() == '-') consume();
         if (p >= end || !(peek() >= '0' && peek() <= '9'))
             error("invalid number: expected digit");
-        while (p < end && peek() >= '0' && peek() <= '9') consume();
-        if (peek() == '.') { consume(); while (p < end && peek() >= '0' && peek() <= '9') consume(); }
+        if (peek() == '0') {
+            consume();
+            if (peek() >= '0' && peek() <= '9')
+                error("invalid number: leading zeros not allowed");
+        } else {
+            while (p < end && peek() >= '0' && peek() <= '9') consume();
+        }
+        if (peek() == '.') {
+            consume();
+            if (p >= end || !(peek() >= '0' && peek() <= '9'))
+                error("invalid number: expected digit after '.'");
+            while (p < end && peek() >= '0' && peek() <= '9') consume();
+        }
         if (peek() == 'e' || peek() == 'E') {
             consume();
             if (peek() == '+' || peek() == '-') consume();
+            if (p >= end || !(peek() >= '0' && peek() <= '9'))
+                error("invalid number: expected digit in exponent");
             while (p < end && peek() >= '0' && peek() <= '9') consume();
         }
         double val;
