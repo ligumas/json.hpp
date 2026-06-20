@@ -44,10 +44,20 @@ v.size()
 v.empty()
 v.contains("key")
 
+// typed access with default — returns def if key missing or wrong type
+int   n = v.get<int>("count", 0);
+bool  b = v.get<bool>("flag", false);
+auto  s = v.get<std::string>("name", "");
+float f = v.get<float>("ratio", 0.0f);
+
 // safe access: returns pointer to value, or nullptr if key is missing
 if (const json::Value* p = v.try_get("optional_field")) {
     use(p->as_string());
 }
+
+// access with fallback Value
+json::Value fallback = 42;
+json::Value x = v.value("count", fallback);   // returns fallback if key missing
 
 std::string s = json::dump(v);       // pretty-printed, 2 space indent
 std::string s = json::dump(v, 0);    // compact
