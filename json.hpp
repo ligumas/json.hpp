@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <limits>
 #include <algorithm>
+#include <type_traits>
 
 namespace json {
 
@@ -97,6 +98,23 @@ struct Value {
     Value value(const std::string& key, Value default_val) const {
         const Value* p = try_get(key);
         return p ? *p : std::move(default_val);
+    }
+
+    template<typename T>
+    T get(const std::string& key, T def = T{}) const {
+        const Value* p = try_get(key);
+        if (!p) return def;
+        if constexpr (std::is_same_v<T, bool>) {
+            return p->is_bool() ? p->as_bool() : def;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return p->is_string() ? p->as_string() : def;
+        } else if constexpr (std::is_floating_point_v<T>) {
+            return p->is_number() ? static_cast<T>(p->as_number()) : def;
+        } else if constexpr (std::is_integral_v<T>) {
+            return p->is_number() ? static_cast<T>(p->as_number()) : def;
+        } else {
+            return def;
+        }
     }
 
     bool operator==(const Value& other) const {
@@ -484,4 +502,5 @@ inline Value array(std::initializer_list<Value> init) {
 }
 
 } // namespace json
+
 
