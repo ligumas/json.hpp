@@ -12,6 +12,7 @@
 #include <ostream>
 #include <cstdint>
 #include <limits>
+#include <algorithm>
 
 namespace json {
 
@@ -423,25 +424,25 @@ inline std::string dump(const Value& v, int indent, int depth) {
     if (v.is_object()) {
         const auto& obj = v.as_object();
         if (obj.empty()) return "{}";
+        std::vector<std::string> keys;
+        keys.reserve(obj.size());
+        for (const auto& [k, _v] : obj) keys.push_back(k);
+        std::sort(keys.begin(), keys.end());
         if (indent == 0) {
             std::string s = "{";
-            size_t i = 0;
-            for (const auto& [k, val] : obj) {
-                s += dump_string(k) + ":" + dump(val, 0, 0);
-                if (i + 1 < obj.size()) s += ",";
-                i++;
+            for (size_t i = 0; i < keys.size(); i++) {
+                s += dump_string(keys[i]) + ":" + dump(obj.at(keys[i]), 0, 0);
+                if (i + 1 < keys.size()) s += ",";
             }
             return s + "}";
         }
         std::string pad(indent * depth, ' ');
         std::string pad1(indent * (depth + 1), ' ');
         std::string s = "{\n";
-        size_t i = 0;
-        for (const auto& [k, val] : obj) {
-            s += pad1 + dump_string(k) + ": " + dump(val, indent, depth + 1);
-            if (i + 1 < obj.size()) s += ",";
+        for (size_t i = 0; i < keys.size(); i++) {
+            s += pad1 + dump_string(keys[i]) + ": " + dump(obj.at(keys[i]), indent, depth + 1);
+            if (i + 1 < keys.size()) s += ",";
             s += "\n";
-            i++;
         }
         return s + pad + "}";
     }
@@ -483,3 +484,4 @@ inline Value array(std::initializer_list<Value> init) {
 }
 
 } // namespace json
+
