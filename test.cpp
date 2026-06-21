@@ -1,6 +1,7 @@
 #include "json.hpp"
 #include <cassert>
 #include <iostream>
+#include <cstring>
 
 int ok = 0, fail = 0;
 
@@ -75,6 +76,73 @@ void test_contains() {
     check(!v.contains("b"), "contains missing key");
 }
 
+void test_get_typed() {
+    auto v = json::parse(R"({"count":42,"ratio":3.14,"flag":true,"name":"jasper"})");
+    check(v.get<int>("count", 0) == 42,        "get<int>");
+    check(v.get<int>("missing", -1) == -1,     "get<int> default");
+    check(std::abs(v.get<float>("ratio", 0.0f) - 3.14f) < 0.001f, "get<float>");
+    check(v.get<bool>("flag", false) == true,  "get<bool>");
+    check(v.get<std::string>("name", "") == "jasper", "get<string>");
+    check(v.get<std::string>("missing", "def") == "def", "get<string> default");
+}
+
+void test_try_get() {
+    auto v = json::parse(R"({"x":10})");
+    const json::Value* p = v.try_get("x");
+    check(p != nullptr && p->as_int() == 10, "try_get existing");
+    const json::Value* q = v.try_get("y");
+    check(q == nullptr, "try_get missing");
+}
+
+void test_value_fallback() {
+    auto v = json::parse(R"({"a":1})");
+    json::Value fallback = 99;
+    json::Value got = v.value("a", fallback);
+    check(got.as_int() == 1, "value existing");
+    json::Value missing = v.value("z", fallback);
+    check(missing.as_int() == 99, "value fallback");
+}
+
+void test_builders() {
+    auto obj = json::object({
+        {"name", "jasper"},
+        {"age", 20},
+        {"tags", json::array({"cpp", "linux"})}
+    });
+    check(obj.is_object(), "object builder");
+    check(obj["name"].as_string() == "jasper", "builder string val");
+    check(obj["age"].as_int() == 20, "builder int val");
+    check(obj["tags"][0].as_string() == "cpp", "builder nested array");
+}
+
+void test_compact_dump() {
+    auto v = json::parse(R"({"x":1,"y":2})");
+    std::string compact = json::dump(v, 0);
+    check(compact.find('\n') == std::string::npos, "compact has no newlines");
+    check(compact.find("\"x\"") != std::string::npos, "compact has key");
+}
+
+void test_unicode() {
+    auto v = json::parse(R"({"msg":"élève"})");
+    std::string s = v["msg"].as_string();
+    check(s.size() == 7, "unicode byte length");
+    check((unsigned char)s[0] == 0xC3 && (unsigned char)s[1] == 0xA9, "unicode utf-8 bytes");
+}
+
+void test_negative_number() {
+    auto v = json::parse(R"({"temp":-42,"ratio":-3.14})");
+    check(v["temp"].as_int() == -42, "negative int");
+    check(std::abs(v["ratio"].as_number() - (-3.14)) < 0.001, "negative float");
+}
+
+void test_equality() {
+    auto a = json::parse("42");
+    auto b = json::parse("42");
+    auto c = json::parse("43");
+    check(a == b, "equal numbers");
+    check(!(a == c), "not equal numbers");
+}
+
 int main() {
     test_basic();
     test_array();
@@ -86,6 +154,14 @@ int main() {
     test_dump();
     test_bool_false();
     test_contains();
+    test_get_typed();
+    test_try_get();
+    test_value_fallback();
+    test_builders();
+    test_compact_dump();
+    test_unicode();
+    test_negative_number();
+    test_equality();
 
     std::cout << ok << "/" << (ok + fail) << " tests passed\n";
     return fail == 0 ? 0 : 1;
