@@ -4,6 +4,7 @@
 
 single-header JSON parser for C++17
 
+![CI](https://github.com/ligumas/json.hpp/actions/workflows/ci.yml/badge.svg)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-blue?style=flat-square)
 ![header-only](https://img.shields.io/badge/header--only-yes-brightgreen?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
