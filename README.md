@@ -48,11 +48,16 @@ json::Value v = json::parse(str);   // throws json::ParseError on bad input
 v.is_null() / is_bool() / is_number() / is_string() / is_array() / is_object()
 
 v.as_bool() / as_number() / as_int() / as_string()
-v["key"]        // object access — throws if key missing
-v[0]            // array access
+v["key"]               // object read — throws if key missing
+v["key"] = value      // object write — creates key if missing
+v[0]                  // array access
 v.size()
 v.empty()
 v.contains("key")
+
+// range-based for on arrays
+for (const auto& item : v["tags"]) { ... }
+for (auto& item : v["tags"]) { ... }
 
 // typed access with default — returns def if key missing or wrong type
 int   n = v.get<int>("count", 0);
