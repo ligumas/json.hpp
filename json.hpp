@@ -58,11 +58,16 @@ struct Value {
     Object& as_object() { return std::get<Object>(data); }
 
     Value& operator[](const std::string& key) {
-        return std::get<Object>(data).at(key);
+        return std::get<Object>(data)[key];
     }
     const Value& operator[](const std::string& key) const {
         return std::get<Object>(data).at(key);
     }
+
+    auto begin()       { return std::get<Array>(data).begin(); }
+    auto end()         { return std::get<Array>(data).end(); }
+    auto begin() const { return std::get<Array>(data).cbegin(); }
+    auto end()   const { return std::get<Array>(data).cend(); }
     Value& operator[](size_t i) {
         return std::get<Array>(data)[i];
     }
